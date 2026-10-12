@@ -696,6 +696,7 @@
   }
 
   .obstacle-row { padding-top: 2px; }
+  .meter-stop.meter-user { left: 50%; background: var(--safe); } /* 1 m of a 2 m scale */
   .pill {
     font-size: 12px;
     font-weight: 800;
@@ -939,17 +940,21 @@
 
       <div class="sensor">
         <div class="row">
-          <span class="sensor-name">ToF (VL53L1X)</span>
+          <span class="sensor-name">Rear ToF (caregiver)</span>
           <span class="sensor-value mono" id="diagTof">&mdash;</span>
         </div>
-        <div class="meter"><span id="diagTofBar"></span></div>
+        <div class="meter"><span id="diagTofBar"></span><i class="meter-stop meter-user" title="1 m presence limit"></i></div>
       </div>
 
+      <div class="row obstacle-row">
+        <span class="sensor-name">Caregiver within 1 m</span>
+        <span class="pill" id="diagUser">&mdash;</span>
+      </div>
       <div class="row obstacle-row">
         <span class="sensor-name">Obstacle stop</span>
         <span class="pill" id="diagStop">&mdash;</span>
       </div>
-      <p class="hint">Bars show 0&ndash;2&nbsp;m; the red tick is the 20&nbsp;cm stop distance. &ldquo;No echo&rdquo; means nothing in range or the sensor isn't connected.</p>
+      <p class="hint">Bars show 0&ndash;2&nbsp;m. Red tick: 20&nbsp;cm obstacle stop. Green tick on the ToF bar: 1&nbsp;m &mdash; the pram only drives while someone is inside it. &ldquo;No echo&rdquo; means nothing in range or the sensor isn't connected.</p>
     </section>
 
     <section class="card">
@@ -1075,6 +1080,7 @@
     diagTof: document.getElementById("diagTof"),
     diagTofBar: document.getElementById("diagTofBar"),
     diagStop: document.getElementById("diagStop"),
+    diagUser: document.getElementById("diagUser"),
     diagVoice: document.getElementById("diagVoice"),
     diagVoiceMeta: document.getElementById("diagVoiceMeta"),
     diagVoiceBox: document.getElementById("diagVoiceBox"),
@@ -1368,10 +1374,22 @@
       els.diagTofBar.style.width = Math.min(100, (tofMM / 10 / METER_MAX_CM) * 100) + "%";
     }
 
+    // Caregiver presence (firmware from 2026-10-12): bit2 = check on, bit1 = seen.
+    var checkOn = (flags & 4) !== 0, userSeen = (flags & 2) !== 0;
+    state.userBlocked = checkOn && !userSeen;
+    els.diagUser.textContent = !checkOn ? "Check off" : userSeen ? "Yes" : "No \u2014 stopped";
+    els.diagUser.className = "pill " + (!checkOn ? "" : userSeen ? "is-clear" : "is-stop");
+    if (state.connected && state.overrideOn && state.userBlocked) {
+      showDriveError("Nobody within 1 m behind the pram \u2014 it won't drive. Stand behind it, then tap a direction again.");
+    } else if (els.driveHint.classList.contains("is-error") && !state.userBlocked && state.userBlockedShown) {
+      renderOverride();
+    }
+    state.userBlockedShown = state.connected && state.overrideOn && state.userBlocked;
+
     var stop = (flags & 1) !== 0;
     els.diagStop.textContent = stop ? "Stopping" : "Clear";
     els.diagStop.className = "pill " + (stop ? "is-stop" : "is-clear");
-    els.diagBadge.hidden = !stop;
+    els.diagBadge.hidden = !(stop || state.userBlocked);
 
     if (voiceId === 0) {
       els.diagVoice.textContent = "None yet";
@@ -1401,8 +1419,11 @@
       els.motRAmps.textContent = rA.toFixed(2) + " A";
       // Spell out what the combination means while bringing the motors up.
       var commanded = lCmd !== 0 || rCmd !== 0;
+      if (!commanded && state.userBlocked) {
+        els.motHint.textContent = "Both commands are 0 because nobody is within 1 m behind the pram. Stand behind it so the rear ToF sees you.";
+      }
       var drawing = lA > 0.3 || rA > 0.3;
-      els.motHint.textContent = !commanded
+      if (!(!commanded && state.userBlocked)) els.motHint.textContent = !commanded
         ? "Both commands are 0: the pram isn't telling the motors to move. Switch to Manual on Drive and tap a direction, and check Obstacle stop says Clear."
         : drawing
           ? "Commanded and drawing current: the drivers are powering the motors."
@@ -1478,6 +1499,10 @@
     });
     els.diagStop.textContent = "\u2014";
     els.diagStop.className = "pill";
+    els.diagUser.textContent = "\u2014";
+    els.diagUser.className = "pill";
+    state.userBlocked = false;
+    state.userBlockedShown = false;
     els.diagBadge.hidden = true;
     els.motorCard.hidden = true;
     els.voiceLinkRow.hidden = true;
