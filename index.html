@@ -1023,13 +1023,19 @@
   var VOICE_NAMES = {
     1: "Wake word (learned)",
     2: "Wake word",
+    // Learned (taught) words - IDs match VoiceCommand in VoiceModule.h
+    5: "Stop",
+    6: "Turn right 90\u00b0",
+    7: "Turn left 90\u00b0",
+    8: "Faster",
+    9: "Slower",
     22: "Go forward",
     23: "Retreat",
     24: "Park",
     25: "Turn left 90\u00b0",
     28: "Turn right 90\u00b0",
   };
-  var VOICE_ACTED_ON = { 22: 1, 23: 1, 24: 1, 25: 1, 28: 1 };
+  var VOICE_ACTED_ON = { 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 22: 1, 23: 1, 24: 1, 25: 1, 28: 1 };
 
   var ROUTE_MAX = 16;                 // ROUTE_MAX_WAYPOINTS in config.h
   var ROUTE_CMD = { CLEAR: 0, ARM: 1, DISARM: 2, RESTART: 3 };
