@@ -885,8 +885,9 @@
       <p class="wp-note">
         The pram steers itself toward each waypoint in turn and counts a waypoint reached
         within about 5&nbsp;m &mdash; tighter than that is below what the GPS can resolve.
-        Obstacle sensors, the stop button and any voice command all override route
-        following, and losing this connection stops the pram.
+        Saying &ldquo;stop&rdquo; pauses the route and &ldquo;go forward&rdquo; resumes it; other
+        voice commands are ignored while a route runs. Obstacles pause it too. The stop
+        button, Stop route and losing this connection end it.
       </p>
     </section>
   </main>
@@ -1747,6 +1748,7 @@
       NOFIX: "waiting for a GPS fix",
       BOOT:  "moving to work out which way it faces",
       TURN:  "turning toward the waypoint",
+      PAUSE: "paused by voice \u2014 say \u201cgo forward\u201d or tap Start route",
       RUN:   "waypoint " + (state.navIndex + 1) + " of " + state.navCount + ", " + distance + " away",
       DONE:  "route complete",
     }[navState] || navState.toLowerCase();
