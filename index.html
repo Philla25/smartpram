@@ -620,22 +620,6 @@
   .stat-value.is-low { color: var(--danger); }
   .stat-sub { font-size: 12px; color: var(--text-dim); }
 
-  .batt-bar {
-    height: 8px;
-    border-radius: 999px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    overflow: hidden;
-  }
-  .batt-bar span {
-    display: block;
-    height: 100%;
-    width: 0%;
-    background: var(--safe);
-    transition: width 0.4s ease, background-color 0.2s ease;
-  }
-  .batt-bar span.is-warn { background: var(--manual); }
-  .batt-bar span.is-low { background: var(--danger); }
 
   .hint {
     margin: 0;
@@ -762,18 +746,10 @@
 
     <section class="card">
       <span class="label">Pram status</span>
-      <div class="stat-grid">
-        <div class="stat">
-          <span class="stat-label">Mode</span>
-          <span class="stat-value" id="modeValue">&mdash;</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Battery</span>
-          <span class="stat-value mono" id="battPct">&mdash;</span>
-          <span class="stat-sub mono" id="battVolts"></span>
-        </div>
+      <div class="stat">
+        <span class="stat-label">Mode</span>
+        <span class="stat-value" id="modeValue">&mdash;</span>
       </div>
-      <div class="batt-bar" aria-hidden="true"><span id="battFill"></span></div>
       <div class="status-line">
         <span>Raw</span>
         <span class="mono" id="statusText">&mdash;</span>
@@ -1070,9 +1046,6 @@
     navState: document.getElementById("navState"),
     navDetail: document.getElementById("navDetail"),
     modeValue: document.getElementById("modeValue"),
-    battPct: document.getElementById("battPct"),
-    battVolts: document.getElementById("battVolts"),
-    battFill: document.getElementById("battFill"),
     driveSpeed: document.getElementById("driveSpeed"),
     driveHint: document.getElementById("driveHint"),
     driveBadge: document.getElementById("driveBadge"),
@@ -1253,30 +1226,13 @@
     els.modeValue.className = "stat-value" +
       (mode === "MANUAL" || mode === "AUTO-LOW" ? " is-manual" : mode === "LOWBATT" ? " is-low" : mode ? " is-auto" : "");
 
-    var volts = null, pct = null;
-    for (var i = 1; i < parts.length; i++) {
-      if (/^\d+(\.\d+)?V$/.test(parts[i])) {
-        volts = parts[i];
-        if (parts[i + 1] && /^\d+%$/.test(parts[i + 1])) pct = parseInt(parts[i + 1], 10);
-        break;
-      }
-    }
-    // Firmware sends "NOBATT" when no battery-sense divider is fitted.
-    els.battVolts.textContent = volts || (parts.indexOf("NOBATT") >= 0 ? "not measured" : "");
-    els.battPct.textContent = pct === null ? "\u2014" : pct + "%";
-    els.battFill.style.width = (pct === null ? 0 : Math.max(0, Math.min(100, pct))) + "%";
-    els.battFill.className = (mode === "LOWBATT" || (pct !== null && pct <= 5)) ? "is-low"
-      : (mode === "AUTO-LOW" || (pct !== null && pct < 20)) ? "is-warn" : "";
+    // Battery block removed from Home (2026-10-19): no battery sensing is fitted.
   }
 
   function clearStatus() {
     els.statusText.textContent = "\u2014";
     els.modeValue.textContent = "\u2014";
     els.modeValue.className = "stat-value";
-    els.battPct.textContent = "\u2014";
-    els.battVolts.textContent = "";
-    els.battFill.style.width = "0%";
-    els.battFill.className = "";
   }
 
   function renderActiveCommand() {
